@@ -1,0 +1,609 @@
+openapi: 3.0.3
+info:
+  title: JuaJobs API
+  description: |
+    JuaJobs is a gig economy platform connecting skilled workers with clients across Africa.
+    This API provides endpoints for user management, job postings, applications, reviews, and payments.
+  version: 1.0.0
+  contact:
+    name: JuaJobs API Support
+    email: api-support@juajobs.com
+    url: https://juajobs.com/api-support
+
+servers:
+  - url: https://api.juajobs.com/v1
+    description: Production server
+  - url: https://staging-api.juajobs.com/v1
+    description: Staging server
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login endpoint
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Error code
+            message:
+              type: string
+              description: Human-readable error message
+            details:
+              type: object
+              description: Field-specific error details
+            requestId:
+              type: string
+              description: Unique request identifier
+            timestamp:
+              type: string
+              format: date-time
+              description: Error occurrence timestamp
+
+    User:
+      type: object
+      required:
+        - email
+        - phoneNumber
+        - firstName
+        - lastName
+        - role
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+        email:
+          type: string
+          format: email
+          description: User's email address
+        phoneNumber:
+          type: string
+          description: User's phone number in E.164 format
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          description: User's first name
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          description: User's last name
+        role:
+          type: string
+          enum: [CLIENT, WORKER, ADMIN]
+          description: User's role in the system
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, SUSPENDED]
+          description: User's account status
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    WorkerProfile:
+      type: object
+      required:
+        - userId
+        - title
+        - hourlyRate
+        - skills
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique profile identifier
+        userId:
+          type: string
+          format: uuid
+          description: Associated user ID
+        title:
+          type: string
+          minLength: 5
+          maxLength: 100
+          description: Professional title
+        bio:
+          type: string
+          maxLength: 1000
+          description: Professional biography
+        hourlyRate:
+          type: number
+          minimum: 0
+          description: Hourly rate in USD
+        skills:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: List of professional skills
+        verificationStatus:
+          type: string
+          enum: [PENDING, VERIFIED, REJECTED]
+          description: Profile verification status
+        rating:
+          type: number
+          minimum: 0
+          maximum: 5
+          description: Average rating
+        completedJobs:
+          type: integer
+          minimum: 0
+          description: Number of completed jobs
+
+    JobPosting:
+      type: object
+      required:
+        - clientId
+        - title
+        - description
+        - category
+        - budget
+        - location
+        - requiredSkills
+        - deadline
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique job identifier
+        clientId:
+          type: string
+          format: uuid
+          description: Client user ID
+        title:
+          type: string
+          minLength: 10
+          maxLength: 200
+          description: Job title
+        description:
+          type: string
+          minLength: 50
+          maxLength: 5000
+          description: Detailed job description
+        category:
+          type: string
+          description: Job category
+        subCategory:
+          type: string
+          description: Job subcategory
+        budget:
+          type: object
+          required:
+            - amount
+            - currency
+            - type
+          properties:
+            amount:
+              type: number
+              minimum: 0
+              description: Budget amount
+            currency:
+              type: string
+              description: Currency code (ISO 4217)
+            type:
+              type: string
+              enum: [FIXED, HOURLY]
+              description: Budget type
+        location:
+          type: object
+          required:
+            - type
+            - address
+          properties:
+            type:
+              type: string
+              enum: [REMOTE, ONSITE, HYBRID]
+              description: Work location type
+            address:
+              type: string
+              description: Work location address
+            coordinates:
+              type: object
+              properties:
+                latitude:
+                  type: number
+                  description: Latitude coordinate
+                longitude:
+                  type: number
+                  description: Longitude coordinate
+        requiredSkills:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: Required skills
+        status:
+          type: string
+          enum: [OPEN, IN_PROGRESS, COMPLETED, CANCELLED]
+          description: Job status
+        deadline:
+          type: string
+          format: date-time
+          description: Application deadline
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      description: Create a new user account with the specified role
+      operationId: registerUser
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - phoneNumber
+                - firstName
+                - lastName
+                - password
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                phoneNumber:
+                  type: string
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                password:
+                  type: string
+                  format: password
+                role:
+                  type: string
+                  enum: [CLIENT, WORKER, ADMIN]
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Email or phone number already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+/auth/login:
+    post:
+      summary: Authenticate user
+      description: Login with email and password to obtain JWT token
+      operationId: loginUser
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /jobs:
+    get:
+      summary: List jobs
+      description: Retrieve a paginated list of jobs with optional filters
+      operationId: listJobs
+      tags:
+        - Jobs
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: category
+          in: query
+          description: Filter by category
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by status
+          required: false
+          schema:
+            type: string
+            enum: [OPEN, IN_PROGRESS, COMPLETED, CANCELLED]
+        - name: location[type]
+          in: query
+          description: Filter by location type
+          required: false
+          schema:
+            type: string
+            enum: [REMOTE, ONSITE, HYBRID]
+      responses:
+        '200':
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/JobPosting'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      pages:
+                        type: integer
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Create job
+      description: Create a new job posting
+      operationId: createJob
+      tags:
+        - Jobs
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobPosting'
+      responses:
+        '201':
+          description: Job created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobPosting'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /jobs/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Job ID
+    get:
+      summary: Get job details
+      description: Retrieve detailed information about a specific job
+      operationId: getJob
+      tags:
+        - Jobs
+      responses:
+        '200':
+          description: Job details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobPosting'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Update job
+      description: Update an existing job posting
+      operationId: updateJob
+      tags:
+        - Jobs
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobPosting'
+      responses:
+        '200':
+          description: Job updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobPosting'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /jobs/{id}/applications:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Job ID
+    post:
+      summary: Submit application
+      description: Submit a job application
+      operationId: submitApplication
+      tags:
+        - Applications
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - proposal
+                - bidAmount
+              properties:
+                proposal:
+                  type: string
+                  minLength: 100
+                  maxLength: 2000
+                bidAmount:
+                  type: object
+                  required:
+                    - amount
+                    - currency
+                  properties:
+                    amount:
+                      type: number
+                      minimum: 0
+                    currency:
+                      type: string
+      responses:
+        '201':
+          description: Application submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [PENDING, ACCEPTED, REJECTED, WITHDRAWN]
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
