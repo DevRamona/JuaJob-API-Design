@@ -211,6 +211,50 @@ npm install
 - API Style Guide: `phase-3/api-style-guide.md`
 - Developer Experience: `phase-3/developer-experience.md`
 
+## Documentation
+
+### API Documentation (Swagger UI)
+
+The project includes interactive API documentation using Swagger UI. This provides a user-friendly interface to explore and test the API endpoints.
+
+#### Setup and Running the Documentation
+
+1. Navigate to the documentation directory:
+```bash
+cd phase-3
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start the documentation server:
+```bash
+npm start
+```
+
+4. Access the documentation:
+- Open your browser and navigate to `http://localhost:3000`
+- The Swagger UI will display the complete API documentation
+- The OpenAPI specification is available at `http://localhost:3000/openapi.yaml`
+
+#### Documentation Features
+
+- Interactive API exploration
+- Try-it-out functionality for testing endpoints
+- Detailed request/response schemas
+- Authentication flows
+- Error handling documentation
+- Example requests and responses
+
+#### Available Documentation
+
+- OpenAPI specification: `phase-3/openapi.yaml`
+- API Style Guide: `phase-3/api-style-guide.md`
+- Developer Experience: `phase-3/developer-experience.md`
+- Interactive Swagger UI: `phase-3/swagger-ui.html`
+
 ## Contributing
 
 1. Fork the repository
@@ -232,4 +276,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contact
 
-Project Link: [https://github.com/your-org/juajob-api-design](https://github.com/your-org/juajob-api-design)
+Project Link: [ttps://githubh.com/your-org/juajob-api-design](https://github.com/your-org/juajob-api-design)
