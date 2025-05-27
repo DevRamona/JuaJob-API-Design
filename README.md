@@ -276,4 +276,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contact
 
-Project Link: [ttps://githubh.com/your-org/juajob-api-design](https://github.com/your-org/juajob-api-design)
+Project Link: [JuaJob API Design](https://github.com/DevRamona/JuaJob-API-Design.git)
